@@ -89,3 +89,5 @@ time.sleep(2)
 # pyautogui.dragTo(1025,533, 2)
 # pyautogui.hotkey('ctrl','c')
 # time.sleep(2)
+
+#3 추가로 올리기햣
