@@ -53,7 +53,7 @@ def build_calibration_strip(
 
     # 제목, 방향, 눈금
     s.add_text(spec.width / 2, 4.5, title, height=3.0, align="center")
-    s.add_direction_arrow(t=length - 2.0)
+    s.add_direction_arrow(t=10.0)
     s.add_margin_ruler(every=5.0, label_every=10.0, side="left")
 
     # 0. 리드인 프로브

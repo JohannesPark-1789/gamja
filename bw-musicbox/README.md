@@ -9,6 +9,37 @@ cd bw-musicbox
 pip install -r requirements.txt     # ezdxf
 ```
 
+## 악보 변환 (변환기 코어)
+
+MusicXML(.musicxml/.mxl)·MIDI·ABC 악보를 읽어 세그먼트별 DXF, 315×467 시트 DXF, 보고서를 만든다.
+
+```bash
+python -m musicbox.convert songs/ode-to-joy/melody.musicxml --out out/ode --svg --sheet --barlines
+python -m musicbox.convert song.mxl --out out/song --transpose 5 --out-of-range drop --drop-close
+python -m musicbox.convert song.musicxml --out out/song --standalone-segments   # 장마다 단독 재생 가능
+```
+
+처리 순서와 옵션:
+
+1. **악보 읽기** (`score.py`): 도돌이표를 펼치고, 꾸밈음과 타이 뒷음은 버리고, 화음은 음마다 이벤트로.
+2. **이조·트랙 매핑** (`arrange.py`): `--transpose` 를 생략하면 −12~+12 반음을 전부 시험해 수록 음표가 가장 많은 조를 고른다(동률이면 원조 유지인 옥타브 이동 우선). 범위 밖 음은 `--out-of-range fold|drop|error`. 같은 트랙 최소 간격(기본 8 mm) 위반은 보고하고, `--drop-close` 를 주면 뒤 음을 버린다.
+3. **분할** (`layout.py`): 455 mm 이하가 되도록 박 경계에서 자르되 절단선 앞뒤 4 mm 가 비는 자리를 고른다. 못 찾으면 강제로 자르고 `FORCED` 로 표시한다. 첫 세그먼트에만 리드인 60 mm, 마지막에만 리드아웃 25 mm. 이음부 양 여백에 정합 눈금과 `J1`, `J2` 번호를 각인한다.
+4. **출력** (`convert.py`): `seg01.dxf …`, `--sheet` 시 `sheet01.dxf …`(4열 배치, 브릿지), `report.txt/json`.
+
+보고서 예:
+
+```
+Ode to Joy  (songs/ode-to-joy/melody.musicxml)
+notes 62 → placed 62 (folded 0), dropped 0, removed-close 0
+transpose +12 semitones; candidates: +12:62/0/0, +7:62/0/0, ...  (direct/folded/dropped)
+length 581.0 mm total, music 496.0 mm, ~37.2 s at 100 bpm
+segments 2: #1 436.0 mm/47 holes, #2 145.0 mm/15 holes
+same-track gaps < 8.0 mm: 3
+  m.4 D4 (track D1) gap 4.0 mm
+```
+
+시험곡은 `python tools/make_sample_scores.py` 로 다시 만들 수 있다(환희의 송가, 작은별).
+
 ## 캘리브레이션 스트립
 
 실제 오르골과 레이저에 맞는 값을 실측하기 위한 첫 번째 출력물. 70 × 403 mm 스트립 하나에 네 가지 시험이 들어 있다.
@@ -35,7 +66,7 @@ DXF 레이어와 가공 순서: `CUT_HOLE`(빨강, 구멍) → `ENGRAVE`(각인,
 ### 테스트
 
 ```bash
-python tests/test_calib.py      # pytest 가 있으면 python -m pytest
+python tests/test_calib.py && python tests/test_convert.py     # pytest 가 있으면 python -m pytest
 ```
 
 ## 구조
@@ -44,5 +75,10 @@ python tests/test_calib.py      # pytest 가 있으면 python -m pytest
 musicbox/spec.py    종이 규격(StripSpec), 30음 배열, MIDI 매핑
 musicbox/strip.py   Strip 모델, DXF/SVG 렌더링, 315×467 시트 배치
 musicbox/calib.py   캘리브레이션 스트립 생성 CLI
-songs/              곡 데이터(메타데이터 스키마, 후보 목록)
+musicbox/score.py   악보 파일 → 노트 이벤트 (music21)
+musicbox/arrange.py 이조 선택, 트랙 매핑, 간격 검사
+musicbox/layout.py  세그먼트 분할과 각인
+musicbox/convert.py 변환 CLI와 보고서
+tools/              시험곡 생성 스크립트
+songs/              곡 데이터(meta.yaml + melody.musicxml), 후보 목록
 ```
