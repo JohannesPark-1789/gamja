@@ -103,6 +103,45 @@ def test_convert_end_to_end(tmp_path=None):
     assert abs(sum(sg["length_mm"] for sg in r["segments"]) - r["total_length_mm"]) < 1e-6
 
 
+def test_ensemble_register_split():
+    from musicbox.ensemble import allocate
+    # 4성부 화음(S A T B) 3개 → 3대: B1=S, B2=A+T, B3=B
+    ev = []
+    for i, (s_, a_, t_, b_) in enumerate([(84, 79, 76, 67), (83, 77, 72, 62), (81, 77, 74, 60)]):
+        for m in (s_, a_, t_, b_):
+            ev.append(NoteEvent(float(i), m, 0, 1, str(m)))
+    r = arrange(ev, transpose=0)
+    ens = allocate(r.placed, 3)
+    assert [len(b) for b in ens.boxes] == [3, 6, 3]
+    tops = sorted(p.track for p in ens.boxes[0])
+    assert tops == sorted(max(p.track for p in r.placed if abs(p.beat - i) < 1e-9) for i in range(3))
+    assert not ens.unresolved
+
+
+def test_ensemble_hocket_moves_close_repeats():
+    from musicbox.ensemble import allocate
+    # 멜로디가 같은 음을 0.5박 간격으로 반복 → 1번 박스에서 못 넣는 뒤 음을 다른 박스로
+    ev = [NoteEvent(0.0, 84, 0, 1, "C6"), NoteEvent(0.5, 84, 0, 1, "C6"), NoteEvent(0.0, 72, 0, 1, "C5")]
+    r = arrange(ev, transpose=0)
+    ens = allocate(r.placed, 2)
+    assert len(ens.moved) == 1 and not ens.unresolved
+    assert sum(len(b) for b in ens.boxes) == 3
+
+
+def test_convert_ensemble_shared_cuts(tmp_path=None):
+    from music21 import converter, metadata
+    from musicbox.convert import convert
+    tmp = Path(tmp_path or tempfile.mkdtemp())
+    root = Path(__file__).resolve().parents[1] / "songs"
+    r = convert(root / "abide-with-me" / "score.musicxml", tmp / "out", boxes=3, sheet=True)
+    assert len(r["boxes"]) == 3
+    segs = [len(b["holes_per_segment"]) for b in r["boxes"]]
+    assert len(set(segs)) == 1                       # 모든 박스가 같은 세그먼트 수
+    assert sum(b["notes"] for b in r["boxes"]) == r["placed"]
+    assert all(Path(f).exists() for f in r["files"])
+    assert (tmp / "out" / "box3" / "seg01.dxf").exists()
+
+
 def test_load_sample_scores():
     root = Path(__file__).resolve().parents[1] / "songs"
     sd = load_score(root / "ode-to-joy" / "melody.musicxml")

@@ -52,7 +52,7 @@ def _classify(midi: int, table: dict[int, int]) -> tuple[int | None, int]:
 
 
 def evaluate_transposes(events: list[NoteEvent], spec: StripSpec, base_midi: int,
-                        rng: range = range(-12, 13)) -> list[TransposeCandidate]:
+                        rng: range = range(-24, 25)) -> list[TransposeCandidate]:
     table = spec.midi_table(base_midi)
     out = []
     for semi in rng:

@@ -40,6 +40,20 @@ same-track gaps < 8.0 mm: 3
 
 시험곡은 `python tools/make_sample_scores.py` 로 다시 만들 수 있다(환희의 송가, 작은별).
 
+### 합주 (오르골 여러 대)
+
+```bash
+python -m musicbox.convert songs/abide-with-me/score.musicxml --out out/abide --boxes 4 --box-mode parts --box-parts "0;1;2;3" --svg --sheet --barlines
+```
+
+- 모든 박스는 같은 30음 콤이다. 박스를 늘려도 음역은 늘지 않고, 동시에 독립적으로 울리는 성부 수가 는다.
+- `--boxes N`, `--box-mode register`(기본): 같은 박의 음을 높은 순으로 정렬해 맨 위 음은 1번, 맨 아래 음은 마지막 박스, 남는 음은 가운데로. `--box-mode parts --box-parts "0;1;2,3"`: 악보 파트로 직접 지정.
+- 한 박스에서 같은 트랙 최소 간격을 어기는 음은 다른 박스로 옮긴다(호켓). 못 옮기면 보고서에 `unresolved`.
+- 모든 박스의 스트립은 같은 자리에서 잘리고 같은 리드인을 가진다. 각 스트립에 `B1`…과 이음 번호(`J1B2`)가 각인된다. `--count-in` 으로 0박에 정렬 확인용 C2 한 음을 넣을 수 있다.
+- 출력은 `box1/seg01.dxf …`, 시트는 모든 박스의 세그먼트를 함께 배치한다.
+
+`songs/abide-with-me/` 는 찬송가 EVENTIDE(때 저물어서 날이 어두니, W. H. Monk 1861) 4성부 악보로, 합주 예제다.
+
 ## 캘리브레이션 스트립
 
 실제 오르골과 레이저에 맞는 값을 실측하기 위한 첫 번째 출력물. 70 × 403 mm 스트립 하나에 네 가지 시험이 들어 있다.
@@ -78,6 +92,7 @@ musicbox/calib.py   캘리브레이션 스트립 생성 CLI
 musicbox/score.py   악보 파일 → 노트 이벤트 (music21)
 musicbox/arrange.py 이조 선택, 트랙 매핑, 간격 검사
 musicbox/layout.py  세그먼트 분할과 각인
+musicbox/ensemble.py 합주용 박스 배정(음역 분할·파트 지정, 호켓)
 musicbox/convert.py 변환 CLI와 보고서
 tools/              시험곡 생성 스크립트
 songs/              곡 데이터(meta.yaml + melody.musicxml), 후보 목록

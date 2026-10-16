@@ -1,0 +1,29 @@
+slug: abide-with-me
+title: 때 저물어서 날이 어두니 (Abide with Me)
+aliases:
+  en: Abide with Me
+  tune: EVENTIDE
+  ko_hymnal: 새찬송가 481장
+composer: William Henry Monk
+composer_died: 1889
+first_published: 1861
+lyricist: Henry Francis Lyte (1847)   # 가사는 사용하지 않음
+pd_status:
+  KR: expired
+  US: expired
+pd_basis: "작곡가 1889년 사망, 1861년 출판. 4성부 화성도 Monk 원작"
+checked_on: 2026-10-16
+checked_by: "bw-musicbox"
+source:
+  name: Hymnary.org (EVENTIDE MusicXML, 음표만 성부별로 옮김)
+  url: "https://hymnary.org/tune/eventide_monk"
+  license: public domain (tune and harmony); Hymnary.org 출처 표기 요청
+  retrieved_on: 2026-10-16
+melody_origin: extracted
+melody_file: score.musicxml
+melody_license: CC0-1.0
+parts: 4            # S, A, T, B
+tags: [찬송가, 합주]
+difficulty: medium
+distributable: true
+notes: "2마디 알토 후반 2박은 원본 추출에서 누락되어 10마디와 같은 Eb로 채움. PDF와 대조 필요"

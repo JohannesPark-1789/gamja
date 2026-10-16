@@ -11,7 +11,8 @@ import json
 from pathlib import Path
 
 from .arrange import arrange
-from .layout import layout
+from .ensemble import allocate
+from .layout import compute_bounds, holes_T_of, layout
 from .score import load_score
 from .spec import StripSpec, STANDARD_30
 from .strip import Sheet, strip_svg, write_sheet_dxf, write_strip_dxf
@@ -21,7 +22,8 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
             transpose: int | None = None, out_of_range: str = "fold", drop_close: bool = False,
             part: int | None = None, title: str | None = None, standalone_segments: bool = False,
             barlines: bool = False, ruler: bool = False, svg: bool = False, sheet: bool = False,
-            bridges: int = 4, base_midi: int = 60, count_in: bool = False) -> dict:
+            bridges: int = 4, base_midi: int = 60, count_in: bool = False,
+            boxes: int = 1, box_mode: str = "register", box_parts: list[list[int]] | None = None) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -34,20 +36,42 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
     ar = arrange(events, spec, transpose, out_of_range, base_midi, drop_close)
     if not ar.placed:
         raise SystemExit("no playable notes after arrangement")
-    lay = layout(ar.placed, spec, title, standalone_segments, sd.measure_starts, barlines, ruler,
-                 count_in_track=spec.track_of("C2") if count_in else None)
+    count_track = spec.track_of("C2") if count_in else None
 
+    ens = None
+    box_lists = [ar.placed]
+    if boxes > 1:
+        ens = allocate(ar.placed, boxes, spec, box_mode, box_parts)
+        box_lists = ens.boxes
+        if any(not b for b in box_lists):
+            raise SystemExit("a box received no notes; use fewer boxes or mode=parts with explicit groups")
+
+    # 모든 박스가 같은 자리에서 잘리도록 전체 구멍으로 경계를 정한다
+    all_T = [h[0] for h in holes_T_of(ar.placed, spec, count_track)]
+    bounds, forced, lay_warnings = compute_bounds(all_T, spec)
+
+    layouts = []
     files = []
-    for seg in lay.segments:
-        p = out_dir / f"seg{seg.index:02d}.dxf"
-        write_strip_dxf(seg.strip, p)
-        files.append(str(p))
-        if svg:
-            p.with_suffix(".svg").write_text(strip_svg(seg.strip), encoding="utf-8")
+    all_strips = []
+    for bi, bl in enumerate(box_lists):
+        label = f"B{bi + 1}" if boxes > 1 else ""
+        lay = layout(bl, spec, title, standalone_segments, sd.measure_starts, barlines, ruler,
+                     count_in_track=count_track, bounds=bounds, forced_flags=forced, box_label=label)
+        layouts.append(lay)
+        sub = out_dir / f"box{bi + 1}" if boxes > 1 else out_dir
+        sub.mkdir(parents=True, exist_ok=True)
+        for seg in lay.segments:
+            p = sub / f"seg{seg.index:02d}.dxf"
+            write_strip_dxf(seg.strip, p)
+            files.append(str(p))
+            all_strips.append(seg.strip)
+            if svg:
+                p.with_suffix(".svg").write_text(strip_svg(seg.strip), encoding="utf-8")
+    lay = layouts[0]
 
     sheets = []
     if sheet:
-        pending = [s.strip for s in lay.segments]
+        pending = list(all_strips)
         k = 1
         while pending:
             sh = Sheet()
@@ -89,9 +113,24 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
              "length_mm": s.strip.length, "holes": len(s.strip.holes), "forced_cut": s.forced_cut}
             for s in lay.segments
         ],
+        "boxes": [
+            {"box": i + 1, "notes": len(bl),
+             "holes_per_segment": [len(sg.strip.holes) for sg in layouts[i].segments]}
+            for i, bl in enumerate(box_lists)
+        ],
+        "ensemble": None if ens is None else {
+            "mode": box_mode,
+            "moved_for_spacing": [
+                {"measure": p.measure, "note": p.name, "from": a + 1, "to": b + 1} for p, a, b in ens.moved
+            ],
+            "unresolved_spacing": [
+                {"box": b + 1, "measure": p.measure, "note": p.name,
+                 "gap_mm": round((p.beat - q.beat) * spec.beat_mm, 2)} for b, q, p in ens.unresolved
+            ],
+        },
         "files": files,
         "sheets": sheets,
-        "warnings": sd.warnings + lay.warnings,
+        "warnings": sd.warnings + lay_warnings,
     }
     (out_dir / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     (out_dir / "report.txt").write_text(format_report(report, spec), encoding="utf-8")
@@ -121,6 +160,15 @@ def format_report(r: dict, spec: StripSpec) -> str:
             L.append(f"  m.{d['measure']} {d['note']}")
     for w in r["warnings"]:
         L.append(f"warning: {w}")
+    if len(r.get("boxes", [])) > 1:
+        L.append("boxes: " + ", ".join(f"B{b['box']} {b['notes']} notes {b['holes_per_segment']}" for b in r["boxes"]))
+        e = r["ensemble"]
+        if e["moved_for_spacing"]:
+            L.append(f"moved to another box for spacing: {len(e['moved_for_spacing'])}: " +
+                     ", ".join(f"m.{m['measure']} {m['note']} B{m['from']}→B{m['to']}" for m in e["moved_for_spacing"][:20]))
+        if e["unresolved_spacing"]:
+            L.append(f"unresolved spacing in ensemble: {len(e['unresolved_spacing'])}: " +
+                     ", ".join(f"B{u['box']} m.{u['measure']} {u['note']} {u['gap_mm']} mm" for u in e["unresolved_spacing"][:20]))
     if r["sheets"]:
         L.append("sheets: " + ", ".join(f"{s['file']} ({s['segments']} seg)" for s in r["sheets"]))
     return "\n".join(L) + "\n"
@@ -143,9 +191,17 @@ def main(argv=None) -> int:
     ap.add_argument("--sheet", action="store_true", help="315x467 시트 DXF도 생성")
     ap.add_argument("--bridges", type=int, default=4)
     ap.add_argument("--base-midi", type=int, default=60, help="악보 표기 'C' 에 대응하는 MIDI 번호")
+    ap.add_argument("--boxes", type=int, default=1, help="합주 오르골 대수")
+    ap.add_argument("--box-mode", choices=["register", "parts"], default="register",
+                    help="register: 음높이로 나눔(맨 위 음=1번). parts: --box-parts 로 파트 지정")
+    ap.add_argument("--box-parts", default=None, help="예: '0;1;2,3' (박스별 파트 번호, 0부터)")
     a = ap.parse_args(argv)
+    groups = None
+    if a.box_parts:
+        groups = [[int(x) for x in g.split(",") if x.strip()] for g in a.box_parts.split(";")]
     r = convert(a.score, a.out, STANDARD_30, a.transpose, a.out_of_range, a.drop_close, a.part, a.title,
-                a.standalone_segments, a.barlines, a.ruler, a.svg, a.sheet, a.bridges, a.base_midi, a.count_in)
+                a.standalone_segments, a.barlines, a.ruler, a.svg, a.sheet, a.bridges, a.base_midi, a.count_in,
+                a.boxes, a.box_mode, groups)
     print(format_report(r, STANDARD_30), end="")
     return 0
 

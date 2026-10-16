@@ -50,21 +50,18 @@ def _choose_cut(start: float, holes_T: list[float], spec: StripSpec, max_len: fl
     return best_forced, True
 
 
-def layout(placed: list[Placed], spec: StripSpec = STANDARD_30, title: str = "",
-           standalone_segments: bool = False, measure_starts: list[float] | None = None,
-           barlines: bool = False, ruler: bool = False, count_in_track: int | None = None) -> LayoutResult:
-    warnings: list[str] = []
-    if not placed:
-        raise ValueError("no notes to lay out")
-
+def holes_T_of(placed: list[Placed], spec: StripSpec, count_in_track: int | None = None) -> list[tuple[float, int]]:
     holes = sorted(((spec.lead_in + p.beat * spec.beat_mm, p.track) for p in placed))
     if count_in_track is not None:
         holes.insert(0, (spec.lead_in, count_in_track))
-    holes_T = [h[0] for h in holes]
-    last_T = holes_T[-1]
-    total = last_T + spec.lead_out
+    return holes
 
-    # 분할 지점
+
+def compute_bounds(holes_T: list[float], spec: StripSpec) -> tuple[list[float], list[bool], list[str]]:
+    """전역 구멍 위치 목록 → 세그먼트 경계 [0, c1, c2, ..., total], 강제절단 플래그, 경고."""
+    warnings: list[str] = []
+    holes_T = sorted(holes_T)
+    total = holes_T[-1] + spec.lead_out
     cuts: list[tuple[float, bool]] = []
     start = 0.0
     max_len = spec.max_segment_length
@@ -76,6 +73,24 @@ def layout(placed: list[Placed], spec: StripSpec = STANDARD_30, title: str = "",
         start = Tc
     bounds = [0.0] + [c[0] for c in cuts] + [total]
     forced_flags = [False] + [c[1] for c in cuts]
+    return bounds, forced_flags, warnings
+
+
+def layout(placed: list[Placed], spec: StripSpec = STANDARD_30, title: str = "",
+           standalone_segments: bool = False, measure_starts: list[float] | None = None,
+           barlines: bool = False, ruler: bool = False, count_in_track: int | None = None,
+           bounds: list[float] | None = None, forced_flags: list[bool] | None = None,
+           box_label: str = "") -> LayoutResult:
+    """bounds 를 주면(합주) 그 경계를 그대로 쓴다. 모든 파트 스트립이 같은 자리에서 잘린다."""
+    warnings: list[str] = []
+    if not placed:
+        raise ValueError("no notes to lay out")
+
+    holes = holes_T_of(placed, spec, count_in_track)
+    if bounds is None:
+        bounds, forced_flags, warnings = compute_bounds([h[0] for h in holes], spec)
+    total = bounds[-1]
+    forced_flags = forced_flags or [False] * (len(bounds) - 1)
 
     segments: list[Segment] = []
     n = len(bounds) - 1
@@ -88,7 +103,7 @@ def layout(placed: list[Placed], spec: StripSpec = STANDARD_30, title: str = "",
             if a - 1e-9 <= T < b - 1e-9 or (i == n - 1 and abs(T - b) < 1e-9):
                 strip.add_hole(track, T - a + pre)
         _decorate(strip, spec, title, i + 1, n, a, b, pre, post, i == 0, i == n - 1,
-                  measure_starts if barlines else None, ruler)
+                  measure_starts if barlines else None, ruler, box_label)
         segments.append(Segment(i + 1, a, b, strip, forced_flags[i] if i < len(forced_flags) else False))
 
     return LayoutResult(segments, total, warnings)
@@ -96,9 +111,9 @@ def layout(placed: list[Placed], spec: StripSpec = STANDARD_30, title: str = "",
 
 def _decorate(strip: Strip, spec: StripSpec, title: str, idx: int, n: int, a: float, b: float,
               pre: float, post: float, first: bool, last: bool,
-              measure_starts: list[float] | None, ruler: bool) -> None:
+              measure_starts: list[float] | None, ruler: bool, box_label: str = "") -> None:
     label_x = spec.width - 5.3
-    seg_txt = f"{idx}/{n}"
+    seg_txt = f"{idx}/{n}" + (f" {box_label}" if box_label else "")
     # 선단 영역: 첫 세그먼트(또는 standalone)는 리드인 안에 제목
     if first or pre > 0:
         strip.add_text(spec.width / 2, 6.0, title[:24], height=3.0, align="center")
@@ -112,12 +127,12 @@ def _decorate(strip: Strip, spec: StripSpec, title: str, idx: int, n: int, a: fl
     if not first and pre == 0:
         for x0, d in ((0.0, 1), (spec.width, -1)):
             strip.add_line(x0, 3.0, x0 + d * 4.0, 3.0)
-        strip.add_text(label_x, 4.0, f"J{idx - 1}", height=1.6, rotation=-90)
+        strip.add_text(label_x, 4.0, f"J{idx - 1}{box_label}", height=1.6, rotation=-90)
     if not last and post == 0:
         L = strip.length
         for x0, d in ((0.0, 1), (spec.width, -1)):
             strip.add_line(x0, L - 3.0, x0 + d * 4.0, L - 3.0)
-        strip.add_text(label_x, L - 9.0, f"J{idx}", height=1.6, rotation=-90)
+        strip.add_text(label_x, L - 9.0, f"J{idx}{box_label}", height=1.6, rotation=-90)
 
     if measure_starts:
         x1 = spec.first_track_x - 1.0
