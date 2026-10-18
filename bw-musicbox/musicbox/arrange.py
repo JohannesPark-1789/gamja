@@ -93,11 +93,12 @@ def arrange(events: list[NoteEvent], spec: StripSpec = STANDARD_30, transpose: i
             raise ValueError(f"note {e.name} (m.{e.measure}) out of range after transpose {semi:+d}")
         placed.append(Placed(e.beat, tr, e.part, e.measure, e.name, fold))
 
-    # 같은 시각·같은 트랙 중복(유니즌) 제거
+    # 같은 파트 안의 중복만 제거한다. 파트끼리의 유니즌은 남긴다(합주에서 박스가 다르면 둘 다 쳐야 함).
+    # 한 대로 칠 때의 유니즌 정리는 dedupe_unison() 이 박스 단위로 한다.
     seen = set()
     uniq = []
     for p in placed:
-        key = (round(p.beat, 6), p.track)
+        key = (round(p.beat, 6), p.track, p.part)
         if key in seen:
             continue
         seen.add(key)
@@ -116,6 +117,8 @@ def arrange(events: list[NoteEvent], spec: StripSpec = STANDARD_30, transpose: i
         ps.sort(key=lambda p: p.beat)
         last = None
         for p in ps:
+            if last is not None and abs(p.beat - last.beat) < 1e-9:
+                continue  # 다른 파트의 유니즌: 같은 구멍이라 간격 문제 아님
             if last is not None and p.beat - last.beat < min_gap_beats - 1e-9:
                 violations.append((last, p))
                 if drop_close:
@@ -127,3 +130,16 @@ def arrange(events: list[NoteEvent], spec: StripSpec = STANDARD_30, transpose: i
         placed = [p for p in placed if id(p) in keep]
 
     return ArrangeResult(semi, placed, dropped, cands, violations, removed)
+
+
+def dedupe_unison(notes: list[Placed]) -> list[Placed]:
+    """한 박스 안에서 같은 박·같은 트랙 음은 구멍 하나로 합친다."""
+    seen = set()
+    out = []
+    for p in sorted(notes, key=lambda q: (q.beat, q.track, q.part)):
+        key = (round(p.beat, 6), p.track)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(p)
+    return out

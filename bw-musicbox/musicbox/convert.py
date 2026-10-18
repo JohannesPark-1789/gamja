@@ -10,7 +10,7 @@ import argparse
 import json
 from pathlib import Path
 
-from .arrange import arrange
+from .arrange import arrange, dedupe_unison
 from .ensemble import allocate
 from .layout import compute_bounds, holes_T_of, layout
 from .score import load_score
@@ -40,7 +40,7 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
     count_track = spec.track_of("C2") if count_in else None
 
     ens = None
-    box_lists = [ar.placed]
+    box_lists = [dedupe_unison(ar.placed)]
     if boxes > 1:
         ens = allocate(ar.placed, boxes, spec, box_mode, box_parts)
         box_lists = ens.boxes

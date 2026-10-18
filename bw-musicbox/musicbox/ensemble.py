@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .arrange import Placed
+from .arrange import Placed, dedupe_unison
 from .spec import StripSpec, STANDARD_30
 
 
@@ -72,8 +72,7 @@ def allocate(placed: list[Placed], n_boxes: int, spec: StripSpec = STANDARD_30, 
     else:
         raise ValueError(f"unknown mode {mode}")
 
-    for b in boxes:
-        b.sort(key=lambda p: (p.beat, p.track))
+    boxes = [dedupe_unison(b) for b in boxes]
 
     res = EnsembleResult(boxes)
     _repair_gaps(res, spec)

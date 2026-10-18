@@ -57,6 +57,7 @@ python -m musicbox.convert songs/abide-with-me/score.musicxml --out out/abide --
 레이저로 자르기 전에 실제로 뚫릴 구멍 그대로 소리를 들어 본다(이조·옥타브 접기·박스 배정 반영).
 
 - `preview.mid`: 박스마다 트랙 하나, GM Music Box 음색.
+- 악보 자체가 맞는지는 `python tools/render_reference.py 악보.musicxml --out out/ref --solo` 로 원래 음높이·음 길이 그대로 들어 본다(`--solo` 는 파트를 하나씩 차례로).
 - `preview.wav`: 빗살 소리를 흉내 낸 합성음. 박스는 좌우로 벌려 둔다. 같은 빗살을 최소 간격보다 빨리 다시 치면 둘째 음이 약하게 나서, 실제 오르골에서 문제가 될 자리를 귀로 찾을 수 있다.
 
 `songs/abide-with-me/` 는 찬송가 EVENTIDE(때 저물어서 날이 어두니, W. H. Monk 1861) 4성부 악보로, 합주 예제다.

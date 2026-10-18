@@ -137,9 +137,21 @@ def test_convert_ensemble_shared_cuts(tmp_path=None):
     assert len(r["boxes"]) == 3
     segs = [len(b["holes_per_segment"]) for b in r["boxes"]]
     assert len(set(segs)) == 1                       # 모든 박스가 같은 세그먼트 수
-    assert sum(b["notes"] for b in r["boxes"]) == r["placed"]
+    assert sum(b["notes"] for b in r["boxes"]) <= r["placed"]      # 같은 박스 안 유니즌은 하나로
     assert all(Path(f).exists() for f in r["files"])
     assert (tmp / "out" / "box3" / "seg01.dxf").exists()
+
+
+def test_unison_kept_across_boxes_but_merged_in_one_box(tmp_path=None):
+    from musicbox.ensemble import allocate
+    from musicbox.arrange import dedupe_unison
+    # 두 파트가 같은 박에 같은 음
+    ev = [NoteEvent(0.0, 72, 0, 1, "C5"), NoteEvent(0.0, 72, 1, 1, "C5"), NoteEvent(1.0, 74, 1, 1, "D5")]
+    r = arrange(ev, transpose=0)
+    assert len(r.placed) == 3 and not r.gap_violations
+    assert len(dedupe_unison(r.placed)) == 2                       # 한 대: 구멍 하나
+    ens = allocate(r.placed, 2, mode="parts", groups=[[0], [1]])
+    assert [len(b) for b in ens.boxes] == [1, 2]                   # 두 대: 각자 친다
 
 
 def test_preview_midi_and_wav(tmp_path=None):
