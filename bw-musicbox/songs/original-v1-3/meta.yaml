@@ -1,0 +1,29 @@
+slug: original-v1-3
+title: 자작곡 v1.3 (제목 미정)
+aliases: {}
+composer: 저장소 소유자 (자작곡)
+composer_died: null
+first_published: 2026
+rights: original work by the repository owner
+pd_status:
+  KR: n/a (original work)
+  US: n/a (original work)
+pd_basis: "소유자가 직접 작곡한 곡"
+checked_on: 2026-10-18
+checked_by: "bw-musicbox"
+source:
+  name: 소유자 제공 음원 (mp3 v1.3, 5분 2초)
+  url: ""
+  license: All rights reserved (owner)
+  retrieved_on: 2026-10-18
+melody_origin: extracted        # tools/audio_to_musicxml.py 로 보컬 멜로디 자동 추출
+melody_file: melody_compact.musicxml   # 간주 7마디를 1마디로 줄인 판. 원 타이밍판은 melody.musicxml
+melody_license: All rights reserved (owner)
+parts: 1
+tags: [자작곡, 보컬멜로디, 자동채보]
+difficulty: hard
+distributable: true             # 소유자 자작곡
+notes: >
+  Bb장조, 95.7 bpm, 보컬 음역 D3~D5. Demucs 보컬 분리 + CREPE 음높이 추적으로 자동 채보한 결과라
+  틀린 음이 섞여 있을 수 있다. 같은 음 빠른 반복이 약 106곳이라 한 대로는 일부 음이 약하게 나며,
+  --boxes 2 로 나누면 대부분 해결된다. 전체 약 3.4 m(세그먼트 8개).
