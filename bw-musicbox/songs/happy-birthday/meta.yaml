@@ -1,0 +1,31 @@
+slug: happy-birthday
+title: 생일 축하합니다 (Happy Birthday to You)
+aliases:
+  en: Happy Birthday to You
+  orig: Good Morning to All (1893)
+composer: Mildred J. Hill & Patty Smith Hill (melody)
+composer_died: 1946            # Patty Hill. Mildred Hill 1916
+first_published: 1893
+arranger: bw-musicbox (SATB, 2026)
+pd_status:
+  KR: expired                  # 작곡자 1962년 이전 사망
+  US: expired                  # Marya v. Warner/Chappell (2015), 2016 화해로 PD 확정
+pd_basis: "선율 PD. 4성부 화성은 이 프로젝트가 새로 붙인 편곡(CC0)"
+checked_on: 2026-10-18
+checked_by: "bw-musicbox"
+source:
+  name: 직접 편곡 (tools/happy_birthday_satb.txt)
+  url: ""
+  license: CC0-1.0
+  retrieved_on: 2026-10-18
+melody_origin: transcribed
+melody_file: score.musicxml
+melody_license: CC0-1.0
+parts: 4                       # S, A, T, B
+tags: [동요, 생일, 합주, 4성부]
+difficulty: easy
+distributable: true
+notes: >
+  F장조 3/4, 못갖춘마디. 30음 콤(+19 이조 시 맨 아래 옥타브가 F G C D E)에 맞춰 베이스를 그 음들로만 썼다
+  (1마디 Gm7-C7-F, 6마디 Gm6-Bb/D-Gm7). 88음 전부 옥타브 이동 없이 수록, 오르골 4대에 성부별 배정.
+  "Hap-py" 의 16분음표 반복 4곳은 같은 빗살 간격 때문에 알토 박스로 넘어간다. 길이 261 mm, 한 장.
