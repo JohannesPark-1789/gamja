@@ -215,6 +215,125 @@ def cells_to_notes(frame_t, midi, gate, onset_times, t0, P, sub=4, min_voiced=0.
     return out, sub
 
 
+def _scale_pcs(key_name: str | None) -> set[int] | None:
+    if not key_name:
+        return None
+    from music21 import key as m21key
+    return {p.pitchClass for p in m21key.Key(key_name).getScale().getPitches()}
+
+
+def syllables_to_notes(frame_t, midi, gate, onset_times, t0, P, sub=4, key_name=None,
+                       min_syll=0.07, min_stable=0.12, snap_tol=0.75):
+    """음절 단위 분할 → 음표 목록 [(start_cell, len_cells, midi)].
+
+    1. 유성 구간을 잇고(40 ms 이하 끊김은 붙임) 음절 onset 에서 나눈다.
+    2. 음절 안에서 120 ms 이상 머문 음높이 영역만 음표로 인정한다(멜리스마는 여러 음).
+       그런 영역이 없으면 음절 가운데 부분(앞 15%, 뒤 20% 제외)의 최빈 음높이 하나.
+       → 꺾기, 글리산도, 비브라토가 반음계 경과음으로 바뀌지 않는다.
+    3. 조성 밖 음인데 실제로 부른 음높이가 조성 안 음과 snap_tol 반음 이내면 조성 안 음으로.
+    4. 시작을 16분음표 격자에 맞추고, 다음 음까지 1박 이내면 이어 붙인다.
+    """
+    dt = float(np.median(np.diff(frame_t)))
+    cell = P / sub
+    scale = _scale_pcs(key_name)
+
+    # 1. 유성 구간
+    idx = np.where(gate)[0]
+    if len(idx) == 0:
+        return [], sub
+    runs, s = [], idx[0]
+    for a, b in zip(idx[:-1], idx[1:]):
+        if (b - a) * dt > 0.04:
+            runs.append((s, a + 1))
+            s = b
+    runs.append((s, idx[-1] + 1))
+    on = np.sort(np.asarray(onset_times, dtype=float))
+    segs = []
+    for a, b in runs:
+        cuts = [a]
+        for t in on[(on > frame_t[a] + 0.08) & (on < frame_t[b - 1] - 0.05)]:
+            cuts.append(int(np.searchsorted(frame_t, t)))
+        cuts.append(b)
+        segs += [(x, y) for x, y in zip(cuts[:-1], cuts[1:]) if (y - x) * dt >= min_syll]
+
+    def choose(vals: np.ndarray) -> int:
+        vals = vals[np.isfinite(vals)]
+        r = np.round(vals).astype(int)
+        p = int(np.bincount(r - r.min()).argmax() + r.min())
+        if scale is not None and p % 12 not in scale:
+            med = float(np.median(vals))
+            cands = [q for q in (p - 1, p + 1) if q % 12 in scale and abs(q - med) <= snap_tol]
+            if cands:
+                p = min(cands, key=lambda q: abs(q - med))
+        return p
+
+    # 2. 음절 → 음표(초 단위)
+    from scipy.ndimage import median_filter
+    raw = []  # (start_s, end_s, pitch)
+    k = max(3, int(round(0.09 / dt)) | 1)
+    for a, b in segs:
+        seg = midi[a:b]
+        sm = median_filter(np.nan_to_num(seg, nan=0.0), size=min(k, max(1, (b - a) | 1)))
+        r = np.round(sm).astype(int)
+        regions, rs = [], 0
+        for i in range(1, len(r) + 1):
+            if i == len(r) or r[i] != r[rs]:
+                if (i - rs) * dt >= min_stable:
+                    regions.append((rs, i, r[rs]))
+                rs = i
+        merged = []
+        for reg in regions:  # 같은 음이 이어지는 영역은 하나로
+            if merged and merged[-1][2] == reg[2]:
+                merged[-1] = (merged[-1][0], reg[1], reg[2])
+            else:
+                merged.append(reg)
+        if len(merged) >= 2:
+            for j, (x, y, _) in enumerate(merged):
+                st = a if j == 0 else a + x
+                en = b if j == len(merged) - 1 else a + merged[j + 1][0]
+                raw.append((frame_t[st], frame_t[en - 1] + dt, choose(seg[x:y])))
+        else:
+            n = b - a
+            core = seg[int(n * 0.15): max(int(n * 0.15) + 1, int(n * 0.8))]
+            raw.append((frame_t[a], frame_t[b - 1] + dt, choose(core)))
+
+    # 옥타브 튐 보정(앞뒤 6음 중앙값과 9반음 넘게 차이)
+    ps = np.array([p for _, _, p in raw], dtype=float)
+    for i in range(len(raw)):
+        ctx = np.delete(ps[max(0, i - 6): i + 7], min(i, 6))
+        if len(ctx) >= 4:
+            med = np.median(ctx)
+            p = raw[i][2]
+            while p - med > 9:
+                p -= 12
+            while med - p > 9:
+                p += 12
+            raw[i] = (raw[i][0], raw[i][1], p)
+
+    # 4. 격자 맞춤
+    notes: list[list[int]] = []
+    for st, en, p in raw:
+        c0 = int(round((st - t0) / cell))
+        c1 = max(c0 + 1, int(round((en - t0) / cell)))
+        if c0 < 0:
+            continue
+        if notes and c0 <= notes[-1][0]:
+            # 같은 칸에 두 음 → 앞 음이 더 짧으면 바꿔치기, 아니면 한 칸 뒤로
+            if notes[-1][1] <= 1 and notes[-1][2] != p:
+                notes[-1] = [notes[-1][0], c1 - notes[-1][0], p]
+                continue
+            c0 = notes[-1][0] + 1
+            c1 = max(c1, c0 + 1)
+        if notes and notes[-1][0] + notes[-1][1] > c0:
+            notes[-1][1] = c0 - notes[-1][0]
+        notes.append([c0, c1 - c0, p])
+    for i in range(len(notes) - 1):
+        gap = notes[i + 1][0] - (notes[i][0] + notes[i][1])
+        if 0 < gap <= sub:
+            notes[i][1] += gap
+    return notes, sub
+
+
 def render_check_audio(notes, sub, t0, P, acc_path: Path, out_path: Path) -> None:
     """추출한 음표를 오르골 비슷한 감쇠음으로 합성해 반주와 섞는다(귀로 검증용)."""
     import librosa
@@ -329,6 +448,8 @@ def main(argv=None) -> int:
     ap.add_argument("--stems", default=None, help="이미 분리된 vocals.wav/no_vocals.wav 가 있는 폴더")
     ap.add_argument("--pitch", choices=["crepe", "pyin"], default=None,
                     help="음높이 추적기. 기본: torchcrepe 가 있으면 crepe(정확, 느림), 없으면 pyin")
+    ap.add_argument("--segment", choices=["syllable", "cell"], default="syllable",
+                    help="syllable: 음절 단위(꺾기·비브라토에 강함, 기본). cell: 16분음표 칸 단위")
     ap.add_argument("--min-conf", type=float, default=None,
                     help="유성 판정 신뢰도 하한 (기본 crepe 0.3, pyin 0.2)")
     a = ap.parse_args(argv)
@@ -356,14 +477,17 @@ def main(argv=None) -> int:
     min_conf = a.min_conf if a.min_conf is not None else (0.3 if method == "crepe" else 0.2)
     frame_t, midi, gate, onsets, tuning = track_pitch(voc, voc_p, method, out, min_conf)
     sub = 4 if a.grid == 16 else 2
-    notes, sub = cells_to_notes(frame_t, midi, gate, onsets, t0, P, sub=sub)
+    if a.segment == "syllable":
+        notes, sub = syllables_to_notes(frame_t, midi, gate, onsets, t0, P, sub=sub, key_name=key_name)
+    else:
+        notes, sub = cells_to_notes(frame_t, midi, gate, onsets, t0, P, sub=sub)
 
     render_check_audio(notes, sub, t0, P, acc_p, out / "check_melody_over_accomp.wav")
     title = a.title or audio.stem
     info = write_musicxml(notes, sub, phase, out / "melody.musicxml", title, bpm, key_name)
     report = {"source": audio.name, "bpm": round(bpm, 2), "first_beat_s": round(t0, 3),
               "downbeat_phase": phase, "key": key_name, "tuning_offset_semitones": round(tuning, 3),
-              "grid": a.grid, "pitch_tracker": method, "min_conf": min_conf, "melody": info,
+              "grid": a.grid, "segment": a.segment, "pitch_tracker": method, "min_conf": min_conf, "melody": info,
               "pitch_range": [int(min(n[2] for n in notes)), int(max(n[2] for n in notes))]}
     if a.compact:
         report["compact"] = write_musicxml(notes, sub, phase, out / "melody_compact.musicxml",

@@ -12,7 +12,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from audio_to_musicxml import cells_to_notes, write_musicxml  # noqa: E402
+from audio_to_musicxml import cells_to_notes, syllables_to_notes, write_musicxml  # noqa: E402
 
 
 def _synth(seq, t0=0.5, P=0.5, dt=0.01, wobble=0.15):
@@ -55,6 +55,26 @@ def test_octave_jump_corrected_and_blip_dropped():
     ps = [p for _, _, p in notes]
     assert 62 in ps and 74 not in ps        # 옥타브 튐 → 62 로
     assert 70 not in ps                      # 고립된 16분음표 잡음 제거
+
+
+def test_syllable_glide_absorbed():
+    # D4 를 길게 부르다 Bb3 로 미끄러져 내려가는 꺾기: 중간의 C#4, C4 가 음표가 되면 안 된다
+    t0, P, dt = 0.5, 0.6, 0.01
+    ft = np.arange(0, 4.0, dt)
+    midi = np.full(len(ft), np.nan)
+    a1, a2 = t0, t0 + 1.0 * P           # D4 1박
+    g1 = a2 + 0.10                        # 0.10 s 글리산도
+    a3 = g1                               # Bb3 1박
+    sel = (ft >= a1) & (ft < a2)
+    midi[sel] = 62 + 0.2 * np.sin(2 * np.pi * 5.5 * ft[sel])      # 비브라토
+    sel = (ft >= a2) & (ft < g1)
+    midi[sel] = np.linspace(62, 58, sel.sum())
+    sel = (ft >= a3) & (ft < a3 + P)
+    midi[sel] = 58 + 0.1 * np.sin(2 * np.pi * 5 * ft[sel])
+    gate = np.isfinite(midi)
+    notes, sub = syllables_to_notes(ft, midi, gate, np.array([a1 + 0.01]), t0, P, key_name="B-")
+    assert [p for _, _, p in notes] == [62, 58], notes
+    assert notes[0][0] == 0
 
 
 def test_write_musicxml_compact(tmp=None):
