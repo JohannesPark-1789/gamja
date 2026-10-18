@@ -54,6 +54,24 @@ python -m musicbox.convert songs/abide-with-me/score.musicxml --out out/abide --
 
 `songs/abide-with-me/` 는 찬송가 EVENTIDE(때 저물어서 날이 어두니, W. H. Monk 1861) 4성부 악보로, 합주 예제다.
 
+## 오디오(mp3)에서 멜로디 추출
+
+노래 음원에서 보컬 멜로디를 뽑아 MusicXML 로 만든다. 무거운 패키지가 필요해 변환기 본체와 분리했다.
+
+```bash
+pip install --index-url https://download.pytorch.org/whl/cpu torch torchaudio
+pip install -r requirements-audio.txt
+python tools/audio_to_musicxml.py song.mp3 --out out/song --title "곡 제목" --compact
+```
+
+1. Demucs 로 보컬과 반주를 분리한다(5분 곡에 CPU 약 2~3분).
+2. 반주에서 박을 찾아 등간격 격자로 맞추고, 저음이 센 박을 마디 첫 박으로 삼는다. 템포를 알면 `--bpm`.
+3. 보컬 음높이를 CREPE 로 추적한다(정확하지만 5분 곡에 CPU 약 10분, 결과는 `crepe_f0.npz` 로 캐시). `--pitch pyin` 은 빠르지만 코러스가 겹친 구간을 놓친다.
+4. 16분음표 칸마다 음높이를 정하고, 음절 onset 에서 같은 음도 끊는다. 옥타브 튐 보정, 고립된 잡음 제거, 1박 이내 빈칸은 앞 음을 늘려 채운다.
+5. 출력: `melody.musicxml`(앞뒤 무음을 마디 단위로 자름), `--compact` 시 `melody_compact.musicxml`(2마디 넘는 간주를 1마디로), `check_melody_over_accomp.wav`(추출 멜로디를 반주 위에 합성한 확인용 음원), `transcribe_report.json`.
+
+자동 채보라 틀린 음이 섞인다. 확인용 음원을 들으며 MuseScore 에서 고친 뒤 변환기에 넣는 것을 권한다. 남의 곡을 추출한 결과물은 저작권이 원곡자에게 있으므로 배포하지 않는다.
+
 ## 캘리브레이션 스트립
 
 실제 오르골과 레이저에 맞는 값을 실측하기 위한 첫 번째 출력물. 70 × 403 mm 스트립 하나에 네 가지 시험이 들어 있다.
@@ -80,7 +98,7 @@ DXF 레이어와 가공 순서: `CUT_HOLE`(빨강, 구멍) → `ENGRAVE`(각인,
 ### 테스트
 
 ```bash
-python tests/test_calib.py && python tests/test_convert.py     # pytest 가 있으면 python -m pytest
+python tests/test_calib.py && python tests/test_convert.py && python tests/test_audio.py
 ```
 
 ## 구조

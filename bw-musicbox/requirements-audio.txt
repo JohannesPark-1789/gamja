@@ -1,0 +1,8 @@
+# 오디오 → MusicXML 추출(tools/audio_to_musicxml.py) 전용. 변환기 본체에는 필요 없음.
+# CPU 전용 PyTorch 를 먼저 설치하면 용량이 훨씬 작다:
+#   pip install --index-url https://download.pytorch.org/whl/cpu torch torchaudio
+librosa>=0.10
+soundfile
+scipy
+demucs>=4.0
+torchcrepe>=0.0.22
