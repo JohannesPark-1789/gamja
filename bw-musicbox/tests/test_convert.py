@@ -142,6 +142,22 @@ def test_convert_ensemble_shared_cuts(tmp_path=None):
     assert (tmp / "out" / "box3" / "seg01.dxf").exists()
 
 
+def test_preview_midi_and_wav(tmp_path=None):
+    import wave
+    from musicbox.convert import convert
+    tmp = Path(tmp_path or tempfile.mkdtemp())
+    root = Path(__file__).resolve().parents[1] / "songs"
+    r = convert(root / "ode-to-joy" / "melody.musicxml", tmp / "out", preview=True)
+    mid, wav = (Path(f) for f in r["preview"])
+    data = mid.read_bytes()
+    assert data[:4] == b"MThd" and data.count(b"MTrk") == 2          # 템포 트랙 + 박스 1
+    # note-on(0x90, velocity 90) 개수 = 배치된 음 수
+    assert data.count(bytes([90])) >= r["placed"]
+    with wave.open(str(wav)) as w:
+        secs = w.getnframes() / w.getframerate()
+    assert w.getnchannels() == 2 and secs > r["est_duration_s_at_bpm"]["seconds"] * 0.9
+
+
 def test_load_sample_scores():
     root = Path(__file__).resolve().parents[1] / "songs"
     sd = load_score(root / "ode-to-joy" / "melody.musicxml")

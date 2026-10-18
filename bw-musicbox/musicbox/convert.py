@@ -23,7 +23,8 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
             part: int | None = None, title: str | None = None, standalone_segments: bool = False,
             barlines: bool = False, ruler: bool = False, svg: bool = False, sheet: bool = False,
             bridges: int = 4, base_midi: int = 60, count_in: bool = False,
-            boxes: int = 1, box_mode: str = "register", box_parts: list[list[int]] | None = None) -> dict:
+            boxes: int = 1, box_mode: str = "register", box_parts: list[list[int]] | None = None,
+            preview: bool = False) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -85,6 +86,11 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
             k += 1
 
     bpm = sd.tempo_bpm or 80.0
+    previews = []
+    if preview:
+        from .preview import render_wav, write_midi
+        previews.append(str(write_midi(box_lists, spec, bpm, out_dir / "preview.mid", base_midi)))
+        previews.append(str(render_wav(box_lists, spec, bpm, out_dir / "preview.wav", base_midi)))
     music_mm = lay.total_length - spec.lead_in - spec.lead_out
     report = {
         "title": title,
@@ -129,6 +135,7 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
             ],
         },
         "files": files,
+        "preview": previews,
         "sheets": sheets,
         "warnings": sd.warnings + lay_warnings,
     }
@@ -171,6 +178,8 @@ def format_report(r: dict, spec: StripSpec) -> str:
                      ", ".join(f"B{u['box']} m.{u['measure']} {u['note']} {u['gap_mm']} mm" for u in e["unresolved_spacing"][:20]))
     if r["sheets"]:
         L.append("sheets: " + ", ".join(f"{s['file']} ({s['segments']} seg)" for s in r["sheets"]))
+    if r.get("preview"):
+        L.append("preview: " + ", ".join(r["preview"]))
     return "\n".join(L) + "\n"
 
 
@@ -195,13 +204,14 @@ def main(argv=None) -> int:
     ap.add_argument("--box-mode", choices=["register", "parts"], default="register",
                     help="register: 음높이로 나눔(맨 위 음=1번). parts: --box-parts 로 파트 지정")
     ap.add_argument("--box-parts", default=None, help="예: '0;1;2,3' (박스별 파트 번호, 0부터)")
+    ap.add_argument("--preview", action="store_true", help="preview.mid / preview.wav 미리듣기 생성")
     a = ap.parse_args(argv)
     groups = None
     if a.box_parts:
         groups = [[int(x) for x in g.split(",") if x.strip()] for g in a.box_parts.split(";")]
     r = convert(a.score, a.out, STANDARD_30, a.transpose, a.out_of_range, a.drop_close, a.part, a.title,
                 a.standalone_segments, a.barlines, a.ruler, a.svg, a.sheet, a.bridges, a.base_midi, a.count_in,
-                a.boxes, a.box_mode, groups)
+                a.boxes, a.box_mode, groups, a.preview)
     print(format_report(r, STANDARD_30), end="")
     return 0
 
