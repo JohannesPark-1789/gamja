@@ -1,0 +1,28 @@
+{
+  "source": "song.mp3",
+  "bpm": 95.72,
+  "first_beat_s": 0.069,
+  "downbeat_phase": 0,
+  "key": "B-",
+  "tuning_offset_semitones": 0.012,
+  "grid": 16,
+  "segment": "syllable",
+  "pitch_tracker": "crepe",
+  "min_conf": 0.3,
+  "melody": {
+    "bars": 111,
+    "removed_rest_bars": 0,
+    "notes": 574,
+    "first_bar_index": 8
+  },
+  "pitch_range": [
+    50,
+    74
+  ],
+  "compact": {
+    "bars": 104,
+    "removed_rest_bars": 7,
+    "notes": 574,
+    "first_bar_index": 8
+  }
+}

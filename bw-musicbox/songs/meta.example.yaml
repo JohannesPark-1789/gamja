@@ -1,0 +1,36 @@
+# songs/<slug>/meta.yaml 예시 — 고향의 봄
+slug: gohyang-ui-bom
+title: 고향의 봄
+aliases:
+  en: Spring in My Hometown
+composer: 홍난파 (Hong Nan-pa)
+composer_died: 1941
+lyricist: 이원수            # 참고용. 천공악보는 가사를 쓰지 않으므로 PD 판단에 포함하지 않음
+first_published: 1927
+pd_status:
+  KR: expired              # 1941 + 50 = 1991 만료, 2013년 연장 대상 아님
+  US: expired              # 1927 출판 (1930 이전)
+pd_basis: "작곡가 1941년 사망; 1927년 발표"
+checked_on: 2026-10-16
+checked_by: "noseong"
+source:
+  name: 공유마당
+  url: "https://gongu.copyright.or.kr/"      # 실제 항목 URL로 교체
+  license: 만료저작물
+  retrieved_on: 2026-10-16
+  file: source.pdf
+melody_origin: transcribed   # transcribed(직접 채보) | extracted(원전 MusicXML에서 선율만 추출)
+melody_file: melody.musicxml
+melody_license: CC0-1.0
+parts: 1                     # 합주용이면 2 이상
+tags: [동요, 한국, 가곡]
+difficulty: easy
+distributable: true          # 스크립트가 pd_status 두 관할 expired + melody_origin 있음을 확인해 세팅
+musicbox:                    # 변환기가 채우는 영역
+  model: 30-note-standard
+  range_ok: null
+  best_transpose: null
+  dropped_notes: null
+  min_gap_violations: null
+  length_mm: null
+  segments: null

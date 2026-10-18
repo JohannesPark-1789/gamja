@@ -1,0 +1,9 @@
+m0 P1v1: C4 e., C4 s | P1v2: G3 q | P2v1: E3 q | P2v2: C3 q
+m1 P1v1: D4 q, C4 q, F4 q | P1v2: Bb3 q, Bb3 q, A3 q | P2v1: F3 q, G3 q, F3 q | P2v2: G2 q, C3 q, F2 q
+m2 P1v1: E4 h, C4 e., C4 s | P1v2: Bb3 h, G3 q | P2v1: G3 h, E3 q | P2v2: C3 h, C3 q
+m3 P1v1: D4 q, C4 q, G4 q | P1v2: Bb3 q, Bb3 q, Bb3 q | P2v1: G3 q, E3 q, E3 q | P2v2: G2 q, C3 q, C3 q
+m4 P1v1: F4 h, C4 e., C4 s | P1v2: A3 h, A3 q | P2v1: F3 h, F3 q | P2v2: F2 h, C3 q
+m5 P1v1: C5 q, A4 q, F4 q | P1v2: F4 q, F4 q, Eb4 q | P2v1: A3 q, C4 q, C4 q | P2v2: F3 q, F3 q, F2 q
+m6 P1v1: E4 q, D4 q, Bb4 e., Bb4 s | P1v2: Bb3 q, Bb3 q, D4 q | P2v1: G3 q, F3 q, F3 q | P2v2: G2 q, D3 q, G2 q
+m7 P1v1: A4 q, F4 q, G4 q | P1v2: F4 q, D4 q, E4 q | P2v1: C4 q, A3 q, Bb3 q | P2v2: C3 q, D3 q, C3 q
+m8 P1v1: F4 h | P1v2: C4 h | P2v1: A3 h | P2v2: F2 h

@@ -1,0 +1,16 @@
+m1 P1v1: G4 h, G4 q, F4 q | P1v2: Eb4 h, D4 q, D4 q | P2v1: Bb3 h, Bb3 q, Ab3 q | P2v2: Eb3 h, Bb2 q, Bb2 q
+m2 P1v1: Eb4 h, Bb4 h | P1v2: Eb4 h, Eb4 h | P2v1: G3 h, Eb3 h | P2v2: C3 h, G2 h
+m3 P1v1: C5 q, Bb4 q, Bb4 q, Ab4 q | P1v2: C4 q, D4 q, Eb4 q, F4 q | P2v1: Eb3 q, Bb3 q, Bb3 q, Bb3 q | P2v2: Ab2 q, Bb2 q, C3 q, D3 q
+m4 P1v1: G4 w | P1v2: Eb4 w | P2v1: Bb3 w | P2v2: Eb3 w
+m5 P1v1: G4 h, Ab4 q, Bb4 q | P1v2: Eb4 h, Eb4 q, Eb4 q | P2v1: Bb3 h, Bb3 q, G3 q | P2v2: Eb3 q, D3 q, C3 q, Bb2 q
+m6 P1v1: C5 h, Bb4 h | P1v2: Eb4 h, Eb4 h | P2v1: Ab3 h, G3 h | P2v2: Ab2 h, Eb3 h
+m7 P1v1: Ab4 q, F4 q, G4 q, A4 q | P1v2: Eb4 q, F4 q, Eb4 q, Eb4 q | P2v1: C4 q, Bb3 q, Bb3 q, Eb3 q | P2v2: F3 q, D3 q, Eb3 q, C3 q
+m8 P1v1: Bb4 w | P1v2: D4 w | P2v1: F3 w | P2v2: Bb2 w
+m9 P1v1: G4 h, G4 q, F4 q | P1v2: Eb4 h, D4 q, D4 q | P2v1: G3 q, Ab3 q, Bb3 q, Ab3 q | P2v2: Eb3 h, Bb2 q, Bb2 q
+m10 P1v1: Eb4 h, Bb4 h | P1v2: Eb4 h, Eb4 h | P2v1: G3 h, Eb4 q, D4 q | P2v2: C3 h, G2 h
+m11 P1v1: Bb4 q, Ab4 q, Ab4 q, G4 q | P1v2: Eb4 q, Eb4 q, E4 q, E4 q | P2v1: C4 q, C4 q, C4 q, Bb3 q | P2v2: Ab2 q., Bb2 e, C3 q, C3 q
+m12 P1v1: G4 w | P1v2: Bb3 w | P2v1: Ab3 w | P2v2: F3 w
+m13 P1v1: F4 h, G4 q, Ab4 q | P1v2: D4 h, Eb4 q, D4 q | P2v1: Bb3 h, Bb3 q, Bb3 q | P2v2: Ab3 h, G3 q, F3 q
+m14 P1v1: G4 q, F4 q, Eb4 q, Ab4 q | P1v2: Eb4 q, D4 q, Eb4 q, F4 q | P2v1: Bb3 q, Ab3 q, G3 q, C4 q | P2v2: Eb3 q, Bb2 q, C3 q, Ab2 q
+m15 P1v1: G4 h, F4 h | P1v2: Eb4 h, D4 h | P2v1: Bb3 h., Ab3 q | P2v2: Bb2 h, Bb2 h
+m16 P1v1: Eb4 w | P1v2: Bb3 w | P2v1: G3 w | P2v2: Eb3 w

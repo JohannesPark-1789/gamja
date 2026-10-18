@@ -1,0 +1,26 @@
+slug: twinkle
+title: 작은별 (Twinkle Twinkle Little Star)
+aliases:
+  en: Twinkle Twinkle Little Star
+  fr: Ah! vous dirai-je, maman
+composer: 프랑스 민요 (1761 출판)
+composer_died: null
+first_published: 1761
+pd_status:
+  KR: expired
+  US: expired
+pd_basis: "18세기 민요"
+checked_on: 2026-10-16
+checked_by: "bw-musicbox"
+source:
+  name: 직접 입력 (tinyNotation)
+  url: ""
+  license: CC0-1.0
+  retrieved_on: 2026-10-16
+melody_origin: transcribed
+melody_file: melody.musicxml
+melody_license: CC0-1.0
+parts: 1
+tags: [동요, 입문]
+difficulty: easy
+distributable: true

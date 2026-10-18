@@ -1,0 +1,26 @@
+slug: ode-to-joy
+title: 환희의 송가 (Ode to Joy)
+aliases:
+  en: Ode to Joy
+  de: An die Freude (Symphony No. 9, 4th mvt. theme)
+composer: Ludwig van Beethoven
+composer_died: 1827
+first_published: 1826
+pd_status:
+  KR: expired
+  US: expired
+pd_basis: "작곡가 1827년 사망"
+checked_on: 2026-10-16
+checked_by: "bw-musicbox"
+source:
+  name: 직접 입력 (tinyNotation)
+  url: ""
+  license: CC0-1.0
+  retrieved_on: 2026-10-16
+melody_origin: transcribed
+melody_file: melody.musicxml
+melody_license: CC0-1.0
+parts: 1
+tags: [클래식, 입문]
+difficulty: easy
+distributable: true
