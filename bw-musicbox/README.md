@@ -65,11 +65,14 @@ python -m musicbox.convert songs/happy-birthday/score.musicxml --out out/hbd --b
 | `sheetNN_laser.dxf` | 글자를 선으로 바꾼 DXF. 글꼴 문제로 글자가 빠지는 프로그램 대비 |
 | `sheetNN.svg` | LightBurn, Inkscape 등. mm 단위, 선 굵기 0.01 mm |
 | `sheetNN.plt` | HPGL. LaserCut, RDWorks 등. 40 단위 = 1 mm |
+| `sheetNN_r12.dxf` | 가장 오래된 DXF(R12). 골든레이저 등 레이저 전용 CAD 용. 단위 정보가 없으니 불러올 때 mm 지정 |
 
 - 1:1 mm, 원점은 용지 왼쪽 아래. 용지 테두리는 넣지 않는다.
 - 색·펜 = 가공 순서: 빨강/펜1 구멍 → 검정/펜2 각인 → 파랑/펜3 외곽선. 외곽선은 반드시 마지막.
 - 구멍은 스트립별로 위에서 아래로 정렬해 헤드 이동을 줄인다.
-- 장비 전용 작업 파일(예: .las)은 형식이 공개돼 있지 않아 위 파일을 그 프로그램에서 열어 저장한다.
+- 골든레이저(Golden Laser) 소프트웨어의 작업 파일 `.las` 는 형식이 공개되지 않은 바이너리라 직접 만들지 않는다.
+  골든레이저 소프트웨어는 DXF·PLT·AI 를 불러올 수 있으므로 `sheetNN_r12.dxf`(또는 `.plt`)를 불러와
+  색상별 레이어에 가공 방식과 순서를 지정한 뒤 `.las` 로 저장한다.
 
 ### 미리듣기 (`--preview`)
 

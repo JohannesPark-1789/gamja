@@ -17,7 +17,7 @@ def test_laser_export_happy_birthday(tmp_path=None):
                 boxes=4, box_mode="parts", box_parts=[[0], [1], [2], [3]])
     holes = sum(sum(b["holes_per_segment"]) for b in r["boxes"])
     sheet = r["sheets"][0]
-    ldxf, svg, plt = (Path(p) for p in sheet["laser"])
+    ldxf, svg, plt, r12 = (Path(p) for p in sheet["laser"])
 
     doc = ezdxf.readfile(ldxf)
     msp = doc.modelspace()
@@ -28,6 +28,14 @@ def test_laser_export_happy_birthday(tmp_path=None):
     s = svg.read_text(encoding="utf-8")
     assert 'width="315.0mm"' in s and s.count("<circle") == holes
     assert s.index('id="CUT_HOLE"') < s.index('id="ENGRAVE"') < s.index('id="CUT_OUTLINE"')
+
+    d12 = ezdxf.readfile(r12)
+    assert d12.dxfversion == "AC1009"
+    ents = list(d12.modelspace())
+    assert {e.dxftype() for e in ents} <= {"LINE", "CIRCLE", "POLYLINE"}
+    assert sum(1 for e in ents if e.dxftype() == "CIRCLE") == holes
+    layers_in_order = [e.dxf.layer for e in ents]
+    assert layers_in_order.index("CUT_OUTLINE") > max(i for i, l in enumerate(layers_in_order) if l == "CUT_HOLE")
 
     p = plt.read_text(encoding="ascii")
     assert p.index("SP1;") < p.index("SP2;") < p.index("SP3;")

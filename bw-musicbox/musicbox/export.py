@@ -4,6 +4,8 @@
   - *_laser.dxf : TEXT 를 선(폴리라인)으로 바꾼 DXF. 글꼴이 없어 글자가 빠지는 문제를 막는다.
   - *.svg       : mm 단위, 레이어별 색(구멍 빨강, 각인 검정, 외곽 파랑), 선 굵기 0.01 mm, 채움 없음.
   - *.plt       : HPGL. 40 단위 = 1 mm, 펜 번호 = 레이어(SP1 구멍, SP2 각인, SP3 외곽). 원은 다각형으로.
+  - *_r12.dxf   : 가장 오래된 호환 형식(AutoCAD R12). LINE/CIRCLE/POLYLINE 만, 가공 순서대로 기록.
+                  골든레이저 등 레이저 전용 CAD 가 최신 DXF 를 잘 못 읽을 때 쓴다.
 
 공통 규칙
   - 좌표는 1:1 mm, 원점(0,0) = 용지 왼쪽 아래 모서리, y 는 위쪽.
@@ -124,8 +126,44 @@ def write_plt(doc, path: str | Path, circle_segments: int = 48) -> Path:
     return path
 
 
+R12_COLOR = {LAYER_HOLE: 1, LAYER_ENGRAVE: 7, LAYER_OUTLINE: 5}   # 빨강, 검정(흰색), 파랑
+
+
+def write_dxf_r12(doc, path: str | Path) -> Path:
+    import logging
+
+    import ezdxf
+
+    shapes = _shapes(doc)
+    log = logging.getLogger("ezdxf")
+    old = log.level
+    log.setLevel(logging.ERROR)          # "R12 에는 단위 정보가 없다" 경고 숨김(단위는 mm)
+    try:
+        r12 = ezdxf.new("R12")
+    finally:
+        log.setLevel(old)
+    for layer in ORDER:
+        r12.layers.add(layer, color=R12_COLOR[layer])
+    msp = r12.modelspace()
+    for layer in ORDER:
+        att = {"layer": layer, "color": R12_COLOR[layer]}
+        for sh in shapes[layer]:
+            if sh[0] == "circle":
+                _, cx, cy, r = sh
+                msp.add_circle((cx, cy), r, dxfattribs=att)
+            else:
+                _, pts, closed = sh
+                if len(pts) == 2 and not closed:
+                    msp.add_line(pts[0], pts[1], dxfattribs=att)
+                else:
+                    msp.add_polyline2d(pts[:-1] if closed else pts, close=closed, dxfattribs=att)
+    path = Path(path)
+    r12.saveas(path)
+    return path
+
+
 def export_laser(dxf_path: str | Path, width: float, height: float) -> list[str]:
-    """시트 DXF 하나 → *_laser.dxf, *.svg, *.plt. 만든 파일 경로 목록을 돌려준다."""
+    """시트 DXF 하나 → *_laser.dxf, *.svg, *.plt, *_r12.dxf. 만든 파일 경로 목록을 돌려준다."""
     import ezdxf
 
     dxf_path = Path(dxf_path)
@@ -139,4 +177,5 @@ def export_laser(dxf_path: str | Path, width: float, height: float) -> list[str]
     doc.saveas(laser_dxf)
     svg = write_svg(doc, f"{base}.svg", width, height)
     plt = write_plt(doc, f"{base}.plt")
-    return [str(laser_dxf), str(svg), str(plt)]
+    r12 = write_dxf_r12(doc, f"{base}_r12.dxf")
+    return [str(laser_dxf), str(svg), str(plt), str(r12)]
