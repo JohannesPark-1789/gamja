@@ -52,6 +52,25 @@ python -m musicbox.convert songs/abide-with-me/score.musicxml --out out/abide --
 - 모든 박스의 스트립은 같은 자리에서 잘리고 같은 리드인을 가진다. 각 스트립에 `B1`…과 이음 번호(`J1B2`)가 각인된다. `--count-in` 으로 0박에 정렬 확인용 C2 한 음을 넣을 수 있다.
 - 출력은 `box1/seg01.dxf …`, 시트는 모든 박스의 세그먼트를 함께 배치한다.
 
+### 레이저 파일 (`--laser`)
+
+```bash
+python -m musicbox.convert songs/happy-birthday/score.musicxml --out out/hbd --boxes 4 --box-mode parts --box-parts "0;1;2;3" --laser
+```
+
+시트(315×467)마다 레이저 프로그램용 파일 세 가지를 더 만든다. 내용은 같고 형식만 다르다.
+
+| 파일 | 용도 |
+|---|---|
+| `sheetNN_laser.dxf` | 글자를 선으로 바꾼 DXF. 글꼴 문제로 글자가 빠지는 프로그램 대비 |
+| `sheetNN.svg` | LightBurn, Inkscape 등. mm 단위, 선 굵기 0.01 mm |
+| `sheetNN.plt` | HPGL. LaserCut, RDWorks 등. 40 단위 = 1 mm |
+
+- 1:1 mm, 원점은 용지 왼쪽 아래. 용지 테두리는 넣지 않는다.
+- 색·펜 = 가공 순서: 빨강/펜1 구멍 → 검정/펜2 각인 → 파랑/펜3 외곽선. 외곽선은 반드시 마지막.
+- 구멍은 스트립별로 위에서 아래로 정렬해 헤드 이동을 줄인다.
+- 장비 전용 작업 파일(예: .las)은 형식이 공개돼 있지 않아 위 파일을 그 프로그램에서 열어 저장한다.
+
 ### 미리듣기 (`--preview`)
 
 레이저로 자르기 전에 실제로 뚫릴 구멍 그대로 소리를 들어 본다(이조·옥타브 접기·박스 배정 반영).
@@ -106,7 +125,7 @@ DXF 레이어와 가공 순서: `CUT_HOLE`(빨강, 구멍) → `ENGRAVE`(각인,
 ### 테스트
 
 ```bash
-python tests/test_calib.py && python tests/test_convert.py && python tests/test_audio.py
+python tests/test_calib.py && python tests/test_convert.py && python tests/test_audio.py && python tests/test_export.py
 ```
 
 ## 구조
@@ -120,6 +139,8 @@ musicbox/arrange.py 이조 선택, 트랙 매핑, 간격 검사
 musicbox/layout.py  세그먼트 분할과 각인
 musicbox/ensemble.py 합주용 박스 배정(음역 분할·파트 지정, 호켓)
 musicbox/convert.py 변환 CLI와 보고서
+musicbox/export.py  레이저용 DXF(글자→선)/SVG/PLT 내보내기
+musicbox/preview.py 미리듣기 MIDI/WAV
 tools/              시험곡 생성 스크립트
 songs/              곡 데이터(meta.yaml + melody.musicxml), 후보 목록
 ```

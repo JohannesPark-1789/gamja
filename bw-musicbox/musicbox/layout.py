@@ -116,7 +116,9 @@ def _decorate(strip: Strip, spec: StripSpec, title: str, idx: int, n: int, a: fl
     seg_txt = f"{idx}/{n}" + (f" {box_label}" if box_label else "")
     # 선단 영역: 첫 세그먼트(또는 standalone)는 리드인 안에 제목
     if first or pre > 0:
-        strip.add_text(spec.width / 2, 6.0, title[:24], height=3.0, align="center")
+        t = title[:40]
+        h = min(3.0, (spec.width - 10.0) / (0.62 * max(1, len(t))))   # 폭에 맞춰 글자 크기 자동
+        strip.add_text(spec.width / 2, 6.0, t, height=round(h, 2), align="center")
         strip.add_text(spec.width / 2, 11.5, f"seg {seg_txt}", height=2.2, align="center")
         strip.add_direction_arrow(t=14.0)
     else:

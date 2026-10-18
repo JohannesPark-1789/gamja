@@ -24,7 +24,7 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
             barlines: bool = False, ruler: bool = False, svg: bool = False, sheet: bool = False,
             bridges: int = 4, base_midi: int = 60, count_in: bool = False,
             boxes: int = 1, box_mode: str = "register", box_parts: list[list[int]] | None = None,
-            preview: bool = False) -> dict:
+            preview: bool = False, laser: bool = False) -> dict:
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -81,7 +81,11 @@ def convert(path: str | Path, out_dir: str | Path, spec: StripSpec = STANDARD_30
                 raise SystemExit("a segment does not fit on the sheet")
             p = out_dir / f"sheet{k:02d}.dxf"
             write_sheet_dxf(sh, p, bridges=bridges)
-            sheets.append({"file": str(p), "segments": len(sh.placements)})
+            entry = {"file": str(p), "segments": len(sh.placements)}
+            if laser:
+                from .export import export_laser
+                entry["laser"] = export_laser(p, sh.width, sh.height)
+            sheets.append(entry)
             pending = left
             k += 1
 
@@ -178,6 +182,9 @@ def format_report(r: dict, spec: StripSpec) -> str:
                      ", ".join(f"B{u['box']} m.{u['measure']} {u['note']} {u['gap_mm']} mm" for u in e["unresolved_spacing"][:20]))
     if r["sheets"]:
         L.append("sheets: " + ", ".join(f"{s['file']} ({s['segments']} seg)" for s in r["sheets"]))
+        for s_ in r["sheets"]:
+            if s_.get("laser"):
+                L.append("  laser: " + ", ".join(s_["laser"]))
     if r.get("preview"):
         L.append("preview: " + ", ".join(r["preview"]))
     return "\n".join(L) + "\n"
@@ -205,13 +212,16 @@ def main(argv=None) -> int:
                     help="register: 음높이로 나눔(맨 위 음=1번). parts: --box-parts 로 파트 지정")
     ap.add_argument("--box-parts", default=None, help="예: '0;1;2,3' (박스별 파트 번호, 0부터)")
     ap.add_argument("--preview", action="store_true", help="preview.mid / preview.wav 미리듣기 생성")
+    ap.add_argument("--laser", action="store_true",
+                    help="시트마다 레이저용 *_laser.dxf(글자→선) / *.svg / *.plt 도 생성 (--sheet 포함)")
     a = ap.parse_args(argv)
     groups = None
     if a.box_parts:
         groups = [[int(x) for x in g.split(",") if x.strip()] for g in a.box_parts.split(";")]
     r = convert(a.score, a.out, STANDARD_30, a.transpose, a.out_of_range, a.drop_close, a.part, a.title,
-                a.standalone_segments, a.barlines, a.ruler, a.svg, a.sheet, a.bridges, a.base_midi, a.count_in,
-                a.boxes, a.box_mode, groups, a.preview)
+                a.standalone_segments, a.barlines, a.ruler, a.svg, a.sheet or a.laser, a.bridges, a.base_midi,
+                a.count_in,
+                a.boxes, a.box_mode, groups, a.preview, a.laser)
     print(format_report(r, STANDARD_30), end="")
     return 0
 
