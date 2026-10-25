@@ -29,7 +29,32 @@
 
 ---
 
-## 보호자용 설치 방법 (처음 한 번만)
+## 빠른 설치 (Google Cloud 설정이 이미 되어 있는 경우)
+
+1. Google Cloud Console → **사용자 인증 정보 → OAuth 클라이언트 ID (Android)** 를 아래 값으로 만들거나 수정
+   - 패키지 이름: `com.gamja.recorder`
+   - SHA-1: 배포한 APK 를 서명한 키의 SHA-1 (`keytool -list -v -keystore recorder-release.jks`)
+2. 서명된 APK(`app-release.apk`)를 갤럭시탭에 복사 → 내 파일에서 눌러 설치 ("출처를 알 수 없는 앱" 허용)
+3. 아래 [4. 태블릿에서 첫 설정](#4-태블릿에서-첫-설정) 진행
+
+### 서명된 APK 직접 빌드하기
+
+`recorder_app/keystore.properties` 를 만들고 (레포에 커밋되지 않음):
+
+```properties
+storeFile=recorder-release.jks   # recorder_app/app/ 기준 경로, 또는 절대경로
+storePassword=...
+keyAlias=recorder
+keyPassword=...
+```
+
+```bash
+./gradlew assembleRelease   # → app/build/outputs/apk/release/app-release.apk
+```
+
+> 업데이트 버전도 **같은 키**로 서명해야 덮어쓰기 설치가 되고 드라이브 연결도 유지됩니다. 키 파일을 잃어버리지 마세요.
+
+## 보호자용 설치 방법 (처음부터, 처음 한 번만)
 
 구글 드라이브 업로드를 위해 **Google Cloud 에 이 앱을 등록**하는 과정이 한 번 필요합니다. (무료)
 
