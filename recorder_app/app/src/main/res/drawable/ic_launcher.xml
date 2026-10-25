@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 빨간 원 안의 흰 마이크 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#D32F2F"
+        android:pathData="M54,54m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,62c5.5,0 10,-4.5 10,-10V34c0,-5.5 -4.5,-10 -10,-10s-10,4.5 -10,10v18c0,5.5 4.5,10 10,10zM71,52c0,9.4 -7.6,17 -17,17s-17,-7.6 -17,-17h-5c0,11.2 8.3,20.4 19,21.8V82h6v-8.2c10.7,-1.4 19,-10.6 19,-21.8h-5z" />
+</vector>
